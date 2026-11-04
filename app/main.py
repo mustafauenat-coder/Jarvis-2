@@ -1,6 +1,7 @@
 import asyncio
 import json
 import secrets
+import uuid
 from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -19,6 +20,7 @@ from app.storage import Store, data_dir
 from app.openai_login import Login, AppError, DIRECT
 from app.inference import ChatRequest, build_graph, infer
 from app.voice import LocalVoice
+from app.mcp_connectors import ConnectorError, call_tool as mcp_call_tool, list_tools as mcp_list_tools, validate_endpoint
 
 STATIC = Path(__file__).parent / "static"
 ORIGIN = "http://127.0.0.1:8000"
@@ -30,6 +32,19 @@ class ModelChoice(BaseModel):
 
 class Speech(BaseModel):
     text: str = Field(min_length=1, max_length=12000)
+
+
+class MCPConnectorInput(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    url: str = Field(min_length=8, max_length=1000)
+    token: str | None = Field(default=None, max_length=4000)
+
+
+class MCPToolCall(BaseModel):
+    connector_id: str = Field(min_length=1, max_length=64)
+    tool: str = Field(min_length=1, max_length=200)
+    arguments: dict = Field(default_factory=dict)
+    confirm: bool = False
 
 
 def create_app(root=None, client=None):
@@ -56,7 +71,7 @@ def create_app(root=None, client=None):
         # Local-only service. Exact Host validation also blocks DNS rebinding.
         if request.headers.get("host") != "127.0.0.1:8000":
             return JSONResponse({"detail": "Jarvis lokal unter http://127.0.0.1:8000 öffnen."}, status_code=403)
-        if request.method == "POST":
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             if request.headers.get("origin") != ORIGIN or request.headers.get("x-jarvis-request") != "chat":
                 return JSONResponse({"detail": "Bitte die lokale Jarvis-Oberfläche verwenden."}, status_code=403)
             body = bytearray()
@@ -133,6 +148,68 @@ def create_app(root=None, client=None):
     async def retry():
         app.state.login.paused.discard(app.state.login.store.data["active"])
         return {"ok": True}
+
+    @app.get("/api/mcp/connectors")
+    async def mcp_connectors():
+        from app.mcp_connectors import public_connector
+        return {"connectors": [public_connector(item) for item in app.state.login.store.data.get("mcp_connectors", [])]}
+
+    @app.post("/api/mcp/connectors")
+    async def mcp_add_connector(payload: MCPConnectorInput):
+        try:
+            validate_endpoint(payload.url)
+        except ConnectorError as exc:
+            raise AppError(str(exc), 400) from None
+        entries = app.state.login.store.data.setdefault("mcp_connectors", [])
+        if len(entries) >= 20:
+            raise AppError("Maximal 20 MCP-Verbindungen speichern.", 400)
+        if any(item["url"] == payload.url for item in entries):
+            raise AppError("Diese MCP-Adresse ist bereits eingetragen.", 409)
+        item = {"id": uuid.uuid4().hex, "name": payload.name.strip(), "url": payload.url,
+                "token": payload.token, "enabled": True}
+        entries.append(item)
+        app.state.login.store.save()
+        return {"connector": {"id": item["id"], "name": item["name"], "url": item["url"],
+                               "has_token": bool(item.get("token")), "enabled": True}}
+
+    @app.delete("/api/mcp/connectors/{connector_id}")
+    async def mcp_remove_connector(connector_id: str):
+        entries = app.state.login.store.data.setdefault("mcp_connectors", [])
+        remaining = [item for item in entries if item["id"] != connector_id]
+        if len(remaining) == len(entries):
+            raise AppError("MCP-Verbindung nicht gefunden.", 404)
+        app.state.login.store.data["mcp_connectors"] = remaining
+        app.state.login.store.save()
+        return {"ok": True}
+
+    @app.get("/api/mcp/connectors/{connector_id}/tools")
+    async def mcp_connector_tools(connector_id: str):
+        item = next((entry for entry in app.state.login.store.data.get("mcp_connectors", [])
+                     if entry["id"] == connector_id), None)
+        if not item:
+            raise AppError("MCP-Verbindung nicht gefunden.", 404)
+        try:
+            return {"tools": await mcp_list_tools(item)}
+        except Exception:
+            raise AppError("MCP-Server nicht erreichbar oder MCP-Antwort ungültig. Adresse und Zugang prüfen.", 502) from None
+
+    @app.post("/api/mcp/call")
+    async def mcp_invoke(payload: MCPToolCall):
+        if not payload.confirm:
+            raise AppError("Werkzeugaufruf braucht deine ausdrückliche Freigabe.", 400)
+        item = next((entry for entry in app.state.login.store.data.get("mcp_connectors", [])
+                     if entry["id"] == payload.connector_id), None)
+        if not item:
+            raise AppError("MCP-Verbindung nicht gefunden.", 404)
+        tools = await mcp_list_tools(item)
+        advertised = next((tool for tool in tools if tool["name"] == payload.tool), None)
+        if not advertised:
+            raise AppError("Dieses Werkzeug wird vom MCP-Server nicht angeboten.", 404)
+        try:
+            result = await mcp_call_tool(item, payload.tool, payload.arguments)
+        except Exception:
+            raise AppError("MCP-Werkzeug fehlgeschlagen. Serverstatus und Eingaben prüfen.", 502) from None
+        return {"tool": payload.tool, "description": advertised["description"], **result}
 
     @app.get("/api/models")
     async def models():
