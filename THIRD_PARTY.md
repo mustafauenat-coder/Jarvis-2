@@ -19,3 +19,5 @@ fertigen Installationspaketen die jeweiligen Lizenztexte und Hinweise beilegen.
 Die übrigen Python-Abhängigkeiten werden über pip bezogen. Ihre eigenen Lizenzen
 gelten weiter. Dieser Release enthält eigenen Anwendungscode und den GPL-Text;
 er enthält keine fremden Python-Paketbinaries. Keine OpenAI-Markenrechte übertragen.
+* MCP Python SDK (`mcp`): **MIT**, offizielles [Model Context Protocol Python SDK](https://github.com/modelcontextprotocol/python-sdk). Jarvis nutzt die v1-Client-API für Streamable HTTP (`mcp>=1.26,<2`).
+
