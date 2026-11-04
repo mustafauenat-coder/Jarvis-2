@@ -24,6 +24,19 @@
           <div class="chat-settings"><label><input type="checkbox" id="speak" checked> Stimme</label><label><input type="checkbox" id="research"> Wikipedia-Recherche</label></div>
         </section>
       </div>
+      <section class="connectors-panel" id="connectors" aria-label="MCP Connectoren">
+        <div class="workspace-heading"><div><span class="eyebrow">ERWEITERUNGEN / MCP</span><h2>Deine Connectoren</h2></div><span class="connector-note">MCP Streamable HTTP</span></div>
+        <p class="connector-intro">Verbinde einen Streamable-HTTP-MCP-Server, um seine Werkzeuge zu entdecken. Zugangsdaten werden nur lokal auf diesem PC gespeichert. Jarvis führt Werkzeuge erst nach deiner Bestätigung aus. Der Chat wählt sie noch nicht selbstständig aus; OAuth-Connectors brauchen aktuell einen eigenen Bearer Token.</p>
+        <form id="connector-form" class="connector-form">
+          <label>Name<input id="connector-name" maxlength="80" placeholder="z. B. GitHub" required></label>
+          <label>MCP-Server-Adresse<input id="connector-url" type="url" maxlength="1000" placeholder="https://…/mcp" required></label>
+          <label>Bearer Token <span>(optional)</span><input id="connector-token" type="password" maxlength="4000" autocomplete="off" placeholder="Wird lokal gespeichert"></label>
+          <button class="send-button" type="submit">Verbinden</button>
+        </form>
+        <div id="connector-list" class="connector-list"><p class="empty-state">Noch keine MCP-Verbindungen.</p></div>
+        <p id="connector-error" class="error" role="alert" hidden></p>
+        <pre id="connector-result" class="connector-result" hidden></pre>
+      </section>
       <section id="workspace" class="workspace"><div class="workspace-heading"><div><span class="eyebrow">VOM GEDANKEN ZUM ERGEBNIS</span><h2>Dein Workspace</h2></div><span id="workspace-status">Bereit für deinen ersten Impuls</span></div>
         <div class="workspace-grid"><article class="result-card"><div class="card-heading"><span class="card-number">01</span><span>ERGEBNIS</span><button id="copy-result" class="ghost small" disabled>Kopieren ↗</button></div><h3 id="result-title">Hier wird es konkret.</h3><p id="result-text">Deine nächste Antwort erscheint hier — zum Lesen, Weiterdenken und Mitnehmen.</p></article>
         <article class="sources-card"><div class="card-heading"><span class="card-number">02</span><span>QUELLEN & KONTEXT</span></div><div id="sources"><p class="empty-state">Aktiviere Wikipedia-Recherche für verlinkte Wissensquellen. Live-Kurse und allgemeine Websuche sind noch nicht angebunden.</p></div></article></div>
@@ -33,5 +46,6 @@
     </main>
   </div>
 </div></body></html>
+
 
 
