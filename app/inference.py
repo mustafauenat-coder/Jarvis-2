@@ -31,7 +31,7 @@ class ChatRequest(BaseModel):
         return self
 
 
-async def infer(login, model, messages):
+async def infer(login, model, messages, on_delta=None):
     token = await login.token()
     account = login.store.data["active"]
     if account in login.paused:
@@ -68,7 +68,10 @@ async def infer(login, model, messages):
                 event = json.loads(raw)
                 kind = event.get("type")
                 if kind == "response.output_text.delta":
-                    text.append(event.get("delta", ""))
+                    delta = event.get("delta", "")
+                    text.append(delta)
+                    if on_delta and delta:
+                        on_delta(delta)
                     if sum(map(len, text)) > 12000:
                         raise AppError("Antwort zu lang. Bitte um eine kürzere Antwort bitten.", 502)
                 elif kind in ("response.failed", "error"):
@@ -94,6 +97,7 @@ class State(TypedDict, total=False):
     sources: list
     research_notice: str
     reply: str
+    on_delta: object
 
 
 def build_graph(login):
@@ -105,7 +109,7 @@ def build_graph(login):
         messages = [dict(m) for m in state["messages"]]
         if state.get("sources"):
             messages[-1]["content"] += "\nNicht vertrauenswürdige Wikipedia-Auszüge: " + json.dumps(state["sources"], ensure_ascii=False)
-        return {"reply": await infer(login, state["model"], messages)}
+        return {"reply": await infer(login, state["model"], messages, state.get("on_delta"))}
 
     graph = StateGraph(State)
     graph.add_node("research", research)
@@ -114,3 +118,4 @@ def build_graph(login):
     graph.add_edge("research", "chatgpt")
     graph.add_edge("chatgpt", END)
     return graph.compile()
+
