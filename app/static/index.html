@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Jarvis-2 — Personal Intelligence</title><link rel="stylesheet" href="/static/style.css"><script src="/static/avatar.js" defer></script><script src="/static/chat.js" defer></script></head>
+<body data-state="idle">
+<div class="app-shell">
+  <aside class="rail" aria-label="Bereiche"><a class="logo" href="/" aria-label="Jarvis Startseite">J<span>·</span></a><div class="rail-line"></div><a class="rail-icon selected" href="#conversation" title="Gespräch" aria-label="Gespräch">◉</a><a class="rail-icon" href="#workspace" title="Ergebnisse" aria-label="Ergebnisse">▤</a><div class="rail-bottom">J / 01</div></aside>
+  <div class="main-shell">
+    <header class="topbar"><div class="wordmark">JARVIS <span>PERSONAL INTELLIGENCE</span></div><div class="top-right"><span class="private-badge"><i></i> PERSÖNLICHER ARBEITSRAUM</span><button id="reset" class="ghost">↺ Neuer Chat</button></div></header>
+    <main>
+      <div class="intro"><div><p class="eyebrow">DEIN RAUM FÜR GROSSE IDEEN</p><h1>Was bewegen wir <em>heute?</em></h1></div><span class="session-label">CHATGPT × PIPER<br><b>CHAT EXPERIENCE / 01</b></span></div>
+      <section class="account-panel" aria-label="ChatGPT Anmeldung"><h2>Dein ChatGPT-Konto. Deine lokale Stimme.</h2><p>Jarvis nutzt dein freigegebenes Abo-Kontingent. Kein API-Key und kein automatischer Wechsel zu API-Abrechnung. Deaktiviere zusätzlich in ChatGPT Usage die Verwendung kostenpflichtiger Credits nach dem Abo-Limit.</p><div class="account-controls"><label>Konto <select id="accounts"><option value="">Neues Konto hinzufügen</option></select></label><button id="login" class="login-button" data-oai-siwc-button>Continue with ChatGPT</button><button id="consent" class="ghost">Abo-Nutzung erlauben</button><button id="logout" class="ghost">Abmelden</button></div><div class="account-controls"><label>Modell <select id="model"></select></label><button id="test-answer" class="ghost" disabled>Testantwort erzeugen</button><button id="test-voice" class="ghost">Piper testen</button><button id="retry-usage" class="ghost">Erneut prüfen</button><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noopener noreferrer">Kontingent verwalten ↗</a></div><p id="model-note" aria-live="polite">Zuerst anmelden, dann Testantwort erzeugen.</p></section><div class="studio">
+        <section class="avatar-panel" aria-label="Animierter Jarvis-Assistent">
+          <div class="panel-top"><span class="eyebrow">JARVIS / VIRTUAL PRESENCE</span><span class="live-pill"><i></i><span id="avatar-state">BEREIT</span></span></div>
+          <canvas id="avatar" aria-label="Dreidimensionaler holografischer Jarvis-Kopf"></canvas>
+          <div id="avatar-fallback" hidden><div class="fallback-orb">J</div></div>
+          <div class="avatar-bottom"><div class="wave" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><h2 id="presence-title">Ein Gedanke genügt.</h2><p id="presence-subtitle">Sprich mit mir. Oder fang einfach an zu tippen.</p><button id="talk" class="talk-button">◉ Gespräch starten</button><button id="stop-voice" class="ghost" hidden>Stimme stoppen</button></div>
+          <div class="scene-coordinates" aria-hidden="true">J / CORE<br>NEURAL INTERFACE</div><button id="motion" class="motion-button" aria-pressed="false">Animation pausieren</button>
+        </section>
+        <section class="chat-panel" id="conversation" aria-label="Chat">
+          <div class="chat-heading"><div><span class="eyebrow">DIREKTER DRAHT</span><h2>Unser Gespräch<span class="accent">.</span></h2></div><span class="chat-count" id="chat-count">01</span></div>
+          <div class="connection"><i></i><span id="connection">Verbindung wird geprüft …</span></div>
+          <div id="messages" class="messages" aria-live="polite" aria-label="Chatverlauf"><article class="message assistant"><span>JARVIS</span><p>Hallo, ich bin Jarvis. Lass uns aus deiner nächsten Idee etwas machen.</p></article></div>
+          <p id="error" class="error" role="alert" hidden></p>
+          <form id="chat-form"><label class="sr-only" for="input">Nachricht an Jarvis</label><textarea id="input" rows="2" maxlength="6000" placeholder="Was geht dir durch den Kopf?" required></textarea><div class="compose-bottom"><button type="button" id="mic" class="icon-button" aria-label="Nachricht diktieren">◉</button><span>ENTER ↵</span><button id="send" class="send-button" type="submit" aria-label="Nachricht senden">↑</button></div></form>
+          <div class="chat-settings"><label><input type="checkbox" id="speak" checked> Stimme</label><label><input type="checkbox" id="research"> Wikipedia-Recherche</label></div>
+        </section>
+      </div>
+      <section id="workspace" class="workspace"><div class="workspace-heading"><div><span class="eyebrow">VOM GEDANKEN ZUM ERGEBNIS</span><h2>Dein Workspace</h2></div><span id="workspace-status">Bereit für deinen ersten Impuls</span></div>
+        <div class="workspace-grid"><article class="result-card"><div class="card-heading"><span class="card-number">01</span><span>ERGEBNIS</span><button id="copy-result" class="ghost small" disabled>Kopieren ↗</button></div><h3 id="result-title">Hier wird es konkret.</h3><p id="result-text">Deine nächste Antwort erscheint hier — zum Lesen, Weiterdenken und Mitnehmen.</p></article>
+        <article class="sources-card"><div class="card-heading"><span class="card-number">02</span><span>QUELLEN & KONTEXT</span></div><div id="sources"><p class="empty-state">Aktiviere Wikipedia-Recherche für verlinkte Wissensquellen. Live-Kurse und allgemeine Websuche sind noch nicht angebunden.</p></div></article></div>
+      </section>
+      <footer><span id="voice-info">Mikrofon nur auf Klick · Verlauf nur in diesem Tab</span><span>JARVIS / BUILT TO THINK WITH YOU</span></footer>
+      <p class="privacy-note">Nachrichten werden nach deiner Freigabe an OpenAI übertragen. Piper erzeugt Sprache lokal ohne Cloud-Dienst. Browser-Diktat kann Audio an deinen Browseranbieter senden. Keine automatischen Käufe oder Nachrichten.</p>
+    </main>
+  </div>
+</div></body></html>
+
+
