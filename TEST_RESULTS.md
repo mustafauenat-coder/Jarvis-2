@@ -20,3 +20,9 @@ eines freigeschalteten GPT-6.1-Sol-Kontos. Dafür muss der Nutzer die OpenAI-Anm
 und Abo-Freigabe persönlich abschließen. Die Anwendung zeigt danach den echten
 Kontokatalog und nennt erst nach erfolgreicher Testantwort das verwendete Modell.
 Auch die reale Mikrofonaufnahme erfordert die Freigabe im jeweiligen Browser.
+
+Der erste Live-Login endete mit `invalid_grant`. Ursache nicht abschließend
+ermittelt. Fehlerbehandlung hält nun die unbestätigte dynamische Client-ID getrennt
+von verifizierten Konten fest und erlaubt frische Autorisierung mit neuem PKCE-
+Wert. Für OAuth muss die App lokal auf demselben Rechner wie der Browser laufen;
+Codespaces kann die Loopback-Rückleitung nicht empfangen.

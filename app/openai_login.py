@@ -25,6 +25,7 @@ def provider_error(status, body, request_id=None):
     detail = body.get("error", {}) if isinstance(body, dict) else {}
     code = detail.get("code") if isinstance(detail, dict) else detail
     messages = {
+        "invalid_grant": "OpenAI hat den Anmeldecode abgelehnt. Bitte auf der Jarvis-Startseite eine neue Anmeldung beginnen; die alte Rückleitungsseite nicht neu laden.",
         "subscription_sharing_user_not_eligible": "Dieses Konto oder dieser Workspace darf das ChatGPT-Abo hier nicht nutzen.",
         "subscription_sharing_usage_limit_exceeded": "Das Abo-Kontingent für diese Nutzung ist erreicht. Prüfe ChatGPT → Einstellungen → Usage. Es gibt keinen kostenpflichtigen API-Ersatz.",
         "subscription_sharing_usage_unavailable": "OpenAI kann das Kontingent gerade nicht prüfen. Bitte später erneut versuchen.",
@@ -53,7 +54,8 @@ class Login:
         self.pending = {k: v for k, v in self.pending.items() if v["expires"] > now}
         if len(self.pending) >= 20:
             raise AppError("Zu viele Anmeldeversuche. Bitte kurz warten.", 429)
-        old = self.store.data["accounts"].get(account) if account else None
+        old = (self.store.data["accounts"].get(account) or
+               self.store.data.get("registrations", {}).get(account)) if account else None
         if account and not old:
             raise AppError("Unbekanntes Konto.")
         state, nonce, verifier = (secrets.token_urlsafe(32) for _ in range(3))
@@ -110,9 +112,17 @@ class Login:
         if not params.get("code"):
             raise AppError("Anmeldecode fehlt.")
         async with self.lock:
-            tokens = await self.json_request("POST", TOKEN, data=dict(
-                grant_type="authorization_code", client_id=client_id, code=params["code"],
-                code_verifier=attempt["verifier"], redirect_uri=CALLBACK, resource=API))
+            try:
+                tokens = await self.json_request("POST", TOKEN, data=dict(
+                    grant_type="authorization_code", client_id=client_id, code=params["code"],
+                    code_verifier=attempt["verifier"], redirect_uri=CALLBACK, resource=API))
+            except AppError as exc:
+                if exc.code == "invalid_grant" and client_id not in self.store.data["accounts"]:
+                    # Registration metadata is not authenticated account identity.
+                    # Keep it separate; it grants no access until OIDC validation succeeds.
+                    self.store.data.setdefault("registrations", {})[client_id] = {"client_id": client_id}
+                    self.store.save()
+                raise
             try:
                 claims = await self.validate(tokens["id_token"], client_id, attempt["nonce"])
             except (jwt.PyJWTError, KeyError, StopIteration):
@@ -123,6 +133,7 @@ class Login:
             record = dict(client_id=client_id, subject=claims["sub"], email=claims.get("email", "ChatGPT-Konto"))
             self.merge_tokens(record, tokens)
             self.store.data["accounts"][client_id] = record
+            self.store.data.get("registrations", {}).pop(client_id, None)
             self.store.data["active"] = client_id
             self.store.save()
             self.tested.clear()

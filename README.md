@@ -24,10 +24,37 @@ aplay jarvis-test.wav
 bash scripts/start.sh
 ```
 
-Öffne **http://127.0.0.1:8000** im Browser auf demselben Rechner.
-Nicht `localhost` und nicht die öffentliche Codespaces-Adresse verwenden.
-Später starten: `cd Jarvis-2 && bash scripts/start.sh`.
-Beenden mit Ctrl+C. Ein Serverprozess, keine zusätzlichen Worker.
+Öffne **http://127.0.0.1:8000** im Browser auf demselben Rechner, auf dem
+Jarvis läuft. Die offizielle OAuth-Rückleitung ist absichtlich
+`http://127.0.0.1:8000/auth/callback`. Daher muss auch der Browser auf diesem
+Rechner sein. **GitHub Codespaces und `*.app.github.dev` werden für die
+ChatGPT-Anmeldung nicht unterstützt**: Dort zeigt `127.0.0.1` auf den PC des
+Nutzers, während der Jarvis-Prozess im entfernten Container läuft. Eine Änderung
+der Host-Prüfung oder ein öffentlich sichtbarer Codespaces-Port behebt das nicht.
+
+Für Windows lokal, nachdem Python 3.12 installiert ist:
+
+```powershell
+git clone https://github.com/mustafauenat-coder/Jarvis-2.git
+cd Jarvis-2
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m scripts.download_voice
+python -m scripts.test_voice --output jarvis-test.wav
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+```
+
+Danach **http://127.0.0.1:8000** im selben PC-Browser öffnen. Für Linux später
+starten: `cd Jarvis-2 && bash scripts/start.sh`. Beenden mit Ctrl+C. Ein
+Serverprozess, keine zusätzlichen Worker. Uvicorn immer mit `--no-access-log`
+starten, damit der kurzlebige OAuth-Code nicht in Zugriffslogs landet.
+
+Wenn OpenAI `invalid_grant` zurückgibt, wurde dieser Anmeldecode abgelehnt.
+Die Rückleitung entfernt den Code aus der Browseradresse und zeigt, dass die
+Anmeldung mit einer frischen Freigabe wiederholt werden muss. Alte Callback-
+Adressen nicht erneut laden.
 
 ## Erster Verbindungstest
 

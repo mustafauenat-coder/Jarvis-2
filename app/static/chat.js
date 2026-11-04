@@ -37,7 +37,7 @@ function listen(send){if(listening){autoSend=false;recognition.stop();return;}st
 $("talk").onclick=()=>listen(true);$("mic").onclick=()=>listen(false);
 }else{$("voice-info").textContent="Browser ohne Spracherkennung · Tippen oder Geräte-Diktat verwenden";}
 
-check();
+check().then(()=>{if(new URLSearchParams(location.search).get("login")==="invalid_grant"){error("OpenAI hat den Anmeldecode abgelehnt. Wähle bei Konto „Anmeldung fortsetzen“ und klicke erneut auf Continue with ChatGPT. Der alte Code wird nicht wiederverwendet.");window.history.replaceState(null,"","/");}});
 
 
 

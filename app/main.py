@@ -96,7 +96,8 @@ def create_app(root=None, client=None):
         a = login.store.active()
         return dict(status="ok", configured=bool(a and a.get("access_token") and DIRECT in a.get("scopes", [])),
             voice_configured=app.state.voice.ready(), active=login.store.data["active"],
-            accounts=[dict(id=k, label=v["email"] + " · " + k[-8:]) for k, v in login.store.data["accounts"].items()],
+            accounts=[dict(id=k, label=v["email"] + " · " + k[-8:]) for k, v in login.store.data["accounts"].items()] +
+                     [dict(id=k, label="Anmeldung fortsetzen · " + k[-8:]) for k in login.store.data.get("registrations", {})],
             tested_models=[m for k, m in login.tested if k == login.store.data["active"]],
             paused=login.store.data["active"] in login.paused)
 
@@ -110,7 +111,14 @@ def create_app(root=None, client=None):
 
     @app.get("/auth/callback")
     async def callback(request: Request):
-        await app.state.login.callback(dict(request.query_params), request.cookies.get("jarvis_oauth"))
+        try:
+            await app.state.login.callback(dict(request.query_params), request.cookies.get("jarvis_oauth"))
+        except AppError as exc:
+            if exc.code != "invalid_grant":
+                raise
+            response = RedirectResponse("/?login=invalid_grant", status_code=303)
+            response.delete_cookie("jarvis_oauth")
+            return response
         response = RedirectResponse("/", status_code=303)
         response.delete_cookie("jarvis_oauth")
         return response

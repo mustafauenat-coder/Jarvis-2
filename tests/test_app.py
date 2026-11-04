@@ -26,6 +26,7 @@ class OpenAIStub:
         self.refreshes = 0
         self.responses = 0
         self.bodies = []
+        self.reject_code = False
 
     def __call__(self, r):
         if r.url.path.endswith("jwks.json"):
@@ -33,6 +34,8 @@ class OpenAIStub:
             key.update(kid="test-key", alg="RS256", use="sig")
             return httpx.Response(200, json={"keys": [key]})
         if r.url.path.endswith("oauth/token"):
+            if self.reject_code:
+                return httpx.Response(400, json={"error": "invalid_grant"})
             form = parse_qs(r.content.decode())
             assert form["client_id"] == ["oaiapp_test"]
             assert "client_secret" not in form
@@ -199,3 +202,24 @@ def test_returning_account_mismatch_keeps_original(rig):
     stub.subject = "different-subject"
     assert complete(c, q).status_code == 400
     assert app.state.login.store.active()["subject"] == "test-subject"
+
+
+def test_invalid_grant_retains_registration_but_not_identity(rig):
+    c, app, stub = rig
+    q = begin(c, stub)
+    stub.reject_code = True
+    result = complete(c, q)
+    assert result.status_code == 303
+    assert result.headers["location"] == "/?login=invalid_grant"
+    assert not app.state.login.store.data["accounts"]
+    assert not c.get("/health").json()["configured"]
+    assert complete(c, q).status_code == 400
+    q2 = begin(c, stub, account="oaiapp_test")
+    assert q2["client_id"] == ["oaiapp_test"]
+    assert q2["code_challenge"] != q["code_challenge"]
+    assert q2["nonce"] != q["nonce"]
+    assert "agent_name_hint" not in q2
+    stub.reject_code = False
+    assert complete(c, q2).status_code == 303
+    assert c.get("/health").json()["configured"]
+    assert not app.state.login.store.data["registrations"]
