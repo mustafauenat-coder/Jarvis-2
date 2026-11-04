@@ -5,3 +5,5 @@ PyJWT[crypto]>=2.10,<3
 filelock>=3.16,<4
 langgraph>=1.0,<2
 piper-tts==1.8.0
+mcp>=1.26,<2
+
