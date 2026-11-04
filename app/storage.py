@@ -25,6 +25,7 @@ class Store:
         self.path = self.root / "accounts.json"
         self.data = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {
             "host": "urn:uuid:" + str(uuid.uuid4()), "active": None, "accounts": {}}
+        self.data.setdefault("mcp_connectors", [])
         self.save()
 
     def save(self):
@@ -43,3 +44,4 @@ class Store:
 
     def active(self):
         return self.data["accounts"].get(self.data["active"])
+
