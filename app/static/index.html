@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Jarvis-2 — Personal Intelligence</title><link rel="stylesheet" href="/static/style.css"><script src="/static/avatar.js" defer></script><script src="/static/chat.js" defer></script></head>
 <body data-state="idle">
 <div class="app-shell">
-  <aside class="rail" aria-label="Bereiche"><a class="logo" href="/" aria-label="Jarvis Startseite">J<span>·</span></a><div class="rail-line"></div><a class="rail-icon selected" href="#conversation" title="Gespräch" aria-label="Gespräch">◉</a><a class="rail-icon" href="#workspace" title="Ergebnisse" aria-label="Ergebnisse">▤</a><div class="rail-bottom">J / 01</div></aside>
+  <aside class="rail" aria-label="Bereiche"><a class="logo" href="/" aria-label="Jarvis Startseite">J<span>·</span></a><div class="rail-line"></div><a class="rail-icon selected" href="#conversation" title="Gespräch" aria-label="Gespräch">◉</a><a class="rail-icon" href="#connectors" title="Plugins" aria-label="Plugins">⌘</a><a class="rail-icon" href="#workspace" title="Ergebnisse" aria-label="Ergebnisse">▤</a><div class="rail-bottom">J / 01</div></aside>
   <div class="main-shell">
     <header class="topbar"><div class="wordmark">JARVIS <span>PERSONAL INTELLIGENCE</span></div><div class="top-right"><span class="private-badge"><i></i> PERSÖNLICHER ARBEITSRAUM</span><button id="reset" class="ghost">↺ Neuer Chat</button></div></header>
     <main>
@@ -25,8 +25,10 @@
         </section>
       </div>
       <section class="connectors-panel" id="connectors" aria-label="MCP Connectoren">
-        <div class="workspace-heading"><div><span class="eyebrow">ERWEITERUNGEN / MCP</span><h2>Deine Connectoren</h2></div><span class="connector-note">MCP Streamable HTTP</span></div>
-        <p class="connector-intro">Verbinde einen Streamable-HTTP-MCP-Server, um seine Werkzeuge zu entdecken. Zugangsdaten werden nur lokal auf diesem PC gespeichert. Jarvis führt Werkzeuge erst nach deiner Bestätigung aus. Der Chat wählt sie noch nicht selbstständig aus; OAuth-Connectors brauchen aktuell einen eigenen Bearer Token.</p>
+        <div class="workspace-heading"><div><span class="eyebrow">ERWEITERUNGEN / MCP</span><h2>Plugin-Menü</h2></div><span class="connector-note">Streamable HTTP · MCP</span></div>
+        <p class="connector-intro">Hier siehst du verfügbare Integrations-Presets und deine verbundenen MCP-Server. Ein Preset überträgt keine ChatGPT-Anmeldung: für Jarvis brauchst du die MCP-Adresse des Anbieters und gegebenenfalls einen eigenen Bearer Token. Werkzeuge werden einzeln nach deiner Bestätigung ausgeführt; der Chat wählt sie noch nicht selbstständig aus.</p>
+        <div class="catalog-heading"><h3>Integrations-Verzeichnis <span>Auswahl</span></h3><input id="plugin-search" type="search" placeholder="Plugin suchen …" aria-label="Plugin-Verzeichnis durchsuchen"></div>
+        <div id="plugin-catalog" class="plugin-catalog"></div>
         <form id="connector-form" class="connector-form">
           <label>Name<input id="connector-name" maxlength="80" placeholder="z. B. GitHub" required></label>
           <label>MCP-Server-Adresse<input id="connector-url" type="url" maxlength="1000" placeholder="https://…/mcp" required></label>
