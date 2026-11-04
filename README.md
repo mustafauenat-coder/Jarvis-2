@@ -99,6 +99,10 @@ nicht aber Server-gestartete stdio-Prozesse, MCP-OAuth-Login, MCP-Ressourcen ode
 MCP-Prompts. MCP-Werkzeuge werden noch nicht automatisch vom Chatmodell ausgewählt.
 Ein MCP-Connector stellt keine Berechtigungen aus ChatGPT bereit: jeder Dienst
 braucht seine eigene Server-Adresse und gegebenenfalls ein eigenes Token.
+Das Plugin-Menü enthält eine Auswahl bekannter ChatGPT-Integrationen als Presets;
+ein Preset ist keine bereits eingerichtete Verbindung und enthält keine
+Connector-Adresse oder Zugangsdaten. Anbieter ohne kompatiblen MCP-Server lassen
+sich damit noch nicht anbinden.
 
 Die Integration verwendet das offizielle [MCP-Python-SDK](https://github.com/modelcontextprotocol/python-sdk)
 und den Streamable-HTTP-Transport. Für HTTP-MCP-Server beschreibt der Standard
