@@ -83,6 +83,28 @@ Abo nutzen möchtest. Jarvis kann diese Kontoeinstellung nicht selbst verifizier
 Beim Kontingentfehler pausiert Jarvis Anfragen; keine automatischen Wiederholungen.
 Nach Prüfung der Limits bewusst **Erneut prüfen** wählen.
 
+## MCP-Connectoren
+
+Jarvis unterstützt MCP-Server über **Streamable HTTP**. Unter „Deine Connectoren“
+eine HTTPS-Adresse hinzufügen, Werkzeuge laden und bei Bedarf ein Bearer-Token
+eintragen. Für lokale Entwicklung wird HTTP nur auf `localhost` akzeptiert.
+Tokens werden nicht in die Website zurückgegeben, sondern lokal zusammen mit
+dem privaten Jarvis-Konto gespeichert. Unter Windows den Benutzerordner gegen
+Zugriff durch andere Windows-Konten schützen.
+
+Ein Werkzeug wird einzeln und erst nach einer sichtbaren Bestätigung ausgeführt;
+der Server kann trotzdem externe Änderungen vornehmen. Entfernen löscht die
+gespeicherte Verbindung und das Token. Aktuell unterstützt Jarvis MCP-Tools,
+nicht aber Server-gestartete stdio-Prozesse, MCP-OAuth-Login, MCP-Ressourcen oder
+MCP-Prompts. MCP-Werkzeuge werden noch nicht automatisch vom Chatmodell ausgewählt.
+Ein MCP-Connector stellt keine Berechtigungen aus ChatGPT bereit: jeder Dienst
+braucht seine eigene Server-Adresse und gegebenenfalls ein eigenes Token.
+
+Die Integration verwendet das offizielle [MCP-Python-SDK](https://github.com/modelcontextprotocol/python-sdk)
+und den Streamable-HTTP-Transport. Für HTTP-MCP-Server beschreibt der Standard
+OAuth separat; die Jarvis-Version nimmt derzeit Bearer-Tokens entgegen, aber
+implementiert diesen OAuth-Ablauf noch nicht.
+
 ## Lokal, offline, Datenschutz
 
 Piper ist nach Paketinstallation und einmaligem Modell-Download offline nutzbar;
@@ -146,3 +168,4 @@ Implementiert nach [OpenAI OSS-Anleitung](https://developers.openai.com/siwc/tok
 [Preview-Grenzen](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations).
 Nur öffentlicher `/v1/models`-Katalog und `/v1/responses` mit `store:false, stream:true`.
 Keine internen ChatGPT-Endpunkte, kein Auslesen bestehender ChatGPT-/Codex-Sitzungen.
+
