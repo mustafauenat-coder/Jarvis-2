@@ -48,6 +48,8 @@ class Login:
         self.lock = asyncio.Lock()
         self.tested = set()
         self.paused = set()
+        self._models_cache = None
+        self._models_cached_at = 0.0
 
     def begin(self, browser, account=None, consent=False):
         now = time.time()
@@ -207,7 +209,12 @@ class Login:
             return confirmed
 
     async def models(self):
+        if self._models_cache is not None and time.monotonic() - self._models_cached_at < 300:
+            return self._models_cache
         token = await self.token()
         data = await self.json_request("GET", API + "/models", headers={"Authorization": "Bearer " + token})
-        return [{"slug": m["slug"], "display_name": m["display_name"]}
-                for m in data.get("models", []) if m.get("visibility") == "list"]
+        self._models_cache = [{"slug": m["slug"], "display_name": m["display_name"]}
+                              for m in data.get("models", []) if m.get("visibility") == "list"]
+        self._models_cached_at = time.monotonic()
+        return self._models_cache
+
