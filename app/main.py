@@ -1,4 +1,5 @@
 import asyncio
+import json
 import secrets
 from collections import deque
 from contextlib import asynccontextmanager
@@ -9,7 +10,7 @@ import httpx
 import jwt
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from filelock import FileLock
 from pydantic import BaseModel, Field
@@ -171,6 +172,43 @@ def create_app(root=None, client=None):
                 messages=[m.model_dump() for m in payload.messages], research=payload.research))
             return {k: result.get(k) for k in ("reply", "model", "sources", "research_notice")}
 
+    @app.post("/api/chat/stream")
+    async def chat_stream(payload: ChatRequest):
+        async def events():
+            async with app.state.login.lock:
+                task = None
+                try:
+                    rate_limit()
+                    if (app.state.login.store.data["active"], payload.model) not in app.state.login.tested:
+                        raise AppError("Bitte zuerst die Testantwort mit diesem Modell erfolgreich erzeugen.", 409)
+                    await model_allowed(payload.model)
+                    queue = asyncio.Queue()
+                    result_task = asyncio.create_task(app.state.graph.ainvoke(dict(
+                        model=payload.model, messages=[m.model_dump() for m in payload.messages],
+                        research=payload.research, on_delta=lambda part: queue.put_nowait(part))))
+                    task = result_task
+                    while not task.done() or not queue.empty():
+                        if not queue.empty():
+                            yield "data: " + json.dumps({"type": "delta", "text": queue.get_nowait()}, ensure_ascii=False) + "\n\n"
+                        elif not task.done():
+                            try:
+                                part = await asyncio.wait_for(queue.get(), timeout=0.2)
+                                yield "data: " + json.dumps({"type": "delta", "text": part}, ensure_ascii=False) + "\n\n"
+                            except asyncio.TimeoutError:
+                                continue
+                    result = task.result()
+                    yield "data: " + json.dumps({"type": "done", **{k: result.get(k) for k in ("reply", "model", "sources", "research_notice")}}, ensure_ascii=False) + "\n\n"
+                except AppError as exc:
+                    yield "data: " + json.dumps({"type": "error", "detail": exc.message, "code": exc.code}, ensure_ascii=False) + "\n\n"
+                except asyncio.CancelledError:
+                    if task:
+                        task.cancel()
+                    raise
+                except Exception:
+                    yield "data: " + json.dumps({"type": "error", "detail": "Die Antwort konnte nicht abgeschlossen werden."}, ensure_ascii=False) + "\n\n"
+        return StreamingResponse(events(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
     @app.post("/api/tts")
     async def tts(payload: Speech):
         if not payload.text.strip():
@@ -190,3 +228,4 @@ def create_app(root=None, client=None):
 
 
 app = create_app()
+
